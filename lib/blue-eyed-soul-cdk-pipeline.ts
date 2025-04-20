@@ -61,8 +61,8 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
             ],
         });
 
-        addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, [buildOutput], buildOutput, betaUploadOutput);
-        addDeployStage(this, pipeline, 'DeployProd', true, s3Key, [buildOutput], buildOutput, prodUploadOutput);
+        addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, sourceOutput, sourceOutput, betaUploadOutput);
+        addDeployStage(this, pipeline, 'DeployProd', true, s3Key, sourceOutput, sourceOutput, prodUploadOutput);
     }
 }
 
@@ -72,12 +72,14 @@ function addDeployStage(
     stageName: string,
     isProd: boolean,
     s3Key: string,
-    inputArtifact: codepipeline.Artifact[],
+    inputArtifact: codepipeline.Artifact,
     sourceArtifact: codepipeline.Artifact,
     uploadOutput?: codepipeline.Artifact
 ) {
     const idSuffix = isProd ? 'Prod' : 'Beta';
     const bucketName = isProd ? 'blue-eyed-soul-lambda-code-prod' : 'blue-eyed-soul-lambda-code-beta';
+    // const buildSpecPath = isProd ? 'assets/yml/prod/buildspec.yml' : 'assets/yml/beta/buildspec.yml';
+
     const actions: cp_actions.Action[] = [];
 
     if (isProd) {
@@ -102,8 +104,7 @@ function addDeployStage(
     const uploadAction = new cp_actions.CodeBuildAction({
         actionName: `UploadLambdaZip${idSuffix}`,
         project: uploaderProject,
-        input: sourceArtifact,
-        extraInputs: inputArtifact,
+        input: inputArtifact,
         runOrder: 2,
         outputs: uploadOutput ? [uploadOutput] : [],
     });
@@ -132,9 +133,9 @@ function addDeployStage(
             LambdaFunctionName: `BlueEyedSoul-${idSuffix}`,
             LambdaCodeBucket: bucketName,
             LambdaCodeKey: s3Key,
-            DeployTimestamp: `Deployed at `+ Date.now().toString(),
+            DeployTimestamp: `Deployed at ` + Date.now().toString(),
         },
-        extraInputs: inputArtifact,
+        extraInputs: [inputArtifact],
         runOrder: 3,
     });
 
@@ -174,7 +175,7 @@ function addDeployStage(
     const cleanupAction = new cp_actions.CodeBuildAction({
         actionName: `CleanupBucket${idSuffix}`,
         project: cleanupProject,
-        input: sourceArtifact,
+        input: inputArtifact,
         runOrder: 4,
     });
 
