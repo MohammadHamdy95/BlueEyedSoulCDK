@@ -18,7 +18,6 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
         const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
         const s3Key = `lambda-${timestamp}.zip`;
 
-        // Source: GitHub via CodeStar Connection
         const sourceAction = new cp_actions.CodeStarConnectionsSourceAction({
             actionName: 'GitHub_Source',
             owner: 'MohammadHamdy95',
@@ -28,7 +27,6 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
             connectionArn: 'arn:aws:codeconnections:us-west-2:276366037431:connection/fff370e6-5cf3-4e4b-8087-4c3332b8eff6',
         });
 
-        // Build: Gradle project
         const buildProject = new codebuild.PipelineProject(this, 'GradleBuildProject', {
             environment: {
                 buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
@@ -48,7 +46,6 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
             runOrder: 1,
         });
 
-        // Create the pipeline itself
         const pipeline = new codepipeline.Pipeline(this, 'BlueEyedSoulLambdaPipeline', {
             pipelineName: 'BlueEyedSoulLambdaPipeline',
             artifactBucket,
@@ -64,17 +61,11 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
             ],
         });
 
-        // ✅ Add Beta Stage
         addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, buildOutput, sourceOutput);
-
-        // ✅ Add Prod Stage with manual approval
         addDeployStage(this, pipeline, 'ApproveAndDeployProd', true, s3Key, buildOutput, sourceOutput);
     }
 }
 
-/**
- * Helper to add a deploy stage (Beta or Prod) to the pipeline.
- */
 function addDeployStage(
     scope: Construct,
     pipeline: codepipeline.Pipeline,
@@ -85,13 +76,35 @@ function addDeployStage(
     sourceArtifact: codepipeline.Artifact
 ) {
     const idSuffix = isProd ? 'Prod' : 'Beta';
-    const bucketName = isProd
-        ? 'blue-eyed-soul-lambda-code-prod'
-        : 'blue-eyed-soul-lambda-code-beta';
+    const bucketName = isProd ? 'blue-eyed-soul-lambda-code-prod' : 'blue-eyed-soul-lambda-code-beta';
+    const buildSpecPath = isProd ? 'assets/yml/prod/buildspec.yml' : 'assets/yml/beta/buildspec.yml';
 
-    const buildSpecPath = isProd
-        ? 'assets/yml/prod/buildspec.yml'
-        : 'assets/yml/beta/buildspec.yml';
+    const actions: cp_actions.Action[] = [];
+
+    if (!isProd) {
+        const betaPreBuildProject = new codebuild.PipelineProject(scope, `BetaPreUploadBuild`, {
+            environment: {
+                buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
+            },
+            buildSpec: codebuild.BuildSpec.fromAsset('assets/yml/beta/buildspec.yml'),
+        });
+
+        const betaPreBuildAction = new cp_actions.CodeBuildAction({
+            actionName: 'BetaPreBuildCheck',
+            project: betaPreBuildProject,
+            input: inputArtifact,
+            runOrder: 1,
+        });
+
+        actions.push(betaPreBuildAction);
+    }
+
+    if (isProd) {
+        actions.push(new cp_actions.ManualApprovalAction({
+            actionName: 'ApproveBeforeProd',
+            runOrder: 1,
+        }));
+    }
 
     const uploaderProject = new codebuild.PipelineProject(scope, `Uploader${idSuffix}`, {
         environment: {
@@ -108,17 +121,8 @@ function addDeployStage(
         actionName: `UploadLambdaZip${idSuffix}`,
         project: uploaderProject,
         input: inputArtifact,
-        runOrder: 1,
+        runOrder: 2,
     });
-
-    const actions: cp_actions.Action[] = [];
-
-    if (isProd) {
-        actions.push(new cp_actions.ManualApprovalAction({
-            actionName: 'ApproveBeforeProd',
-            runOrder: 1,
-        }));
-    }
 
     actions.push(uploadAction);
 
@@ -133,7 +137,7 @@ function addDeployStage(
             LambdaCodeKey: s3Key,
         },
         extraInputs: [inputArtifact],
-        runOrder: 2,
+        runOrder: 3,
     });
 
     actions.push(deployAction);
