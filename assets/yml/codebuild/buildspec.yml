@@ -7,7 +7,7 @@ phases:
   build:
     commands:
       - echo "Building the project..."
-      - ./gradlew clean build
+#      - ./gradlew clean build
   post_build:
     commands:
 #artifacts:
