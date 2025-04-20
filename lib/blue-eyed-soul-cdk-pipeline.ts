@@ -62,7 +62,7 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
         });
 
         addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, sourceOutput, sourceOutput, betaUploadOutput);
-        addDeployStage(this, pipeline, 'DeployProd', true, s3Key, buildOutput, sourceOutput, prodUploadOutput);
+        addDeployStage(this, pipeline, 'DeployProd', true, s3Key, sourceOutput, sourceOutput, prodUploadOutput);
     }
 }
 
@@ -133,7 +133,7 @@ function addDeployStage(
             LambdaFunctionName: `BlueEyedSoul-${idSuffix}`,
             LambdaCodeBucket: bucketName,
             LambdaCodeKey: s3Key,
-            DeployTimestamp: Date.now().toString(),
+            DeployTimestamp: `Deployed at `+ Date.now().toString(),
         },
         extraInputs: [inputArtifact],
         runOrder: 3,
