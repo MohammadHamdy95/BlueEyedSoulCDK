@@ -12,7 +12,6 @@ constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     const artifactBucket = new s3.Bucket(this, 'ArtifactBucket');
-
     const sourceOutput = new codepipeline.Artifact('SourceOutput');
     const buildOutput = new codepipeline.Artifact('BuildOutput');
 
@@ -54,14 +53,32 @@ constructor(scope: Construct, id: string, props?: cdk.StackProps) {
       runOrder: 2,
     });
 
-    // Deploy stage: CloudFormation
-    const deployAction = new cp_actions.CloudFormationCreateUpdateStackAction({
-      actionName: 'DeployStacks',
-      stackName: 'BlueEyedSoulLambdaStack',
-      templatePath: buildOutput.atPath('lambda.yml'),
-      adminPermissions: true,
-      runOrder: 1,
+    const betaDeployAction = new cp_actions.CloudFormationCreateUpdateStackAction({
+        actionName: 'DeployBeta',
+        stackName: 'BlueEyedSoulLambdaBetaStack',
+        templatePath: buildOutput.atPath('lambda.yml'),
+        adminPermissions: true,
+        parameterOverrides: {
+            LambdaFunctionName: 'BlueEyedSoul-Beta',
+        },
     });
+
+    const prodApprovalAction = new cp_actions.ManualApprovalAction({
+        actionName: 'ApproveBeforeProd',
+        runOrder: 1,
+    });
+
+    const prodDeployAction = new cp_actions.CloudFormationCreateUpdateStackAction({
+        actionName: 'DeployProd',
+        stackName: 'BlueEyedSoulLambdaProdStack',
+        templatePath: buildOutput.atPath('lambda.yml'),
+        adminPermissions: true,
+        parameterOverrides: {
+            LambdaFunctionName: 'BlueEyedSoul-Prod',
+        },
+        runOrder:2 // ensure that it runs second
+    });
+
 
     // Create pipeline
     new codepipeline.Pipeline(this, 'BlueEyedSoulLambdaPipeline', {
@@ -79,9 +96,13 @@ constructor(scope: Construct, id: string, props?: cdk.StackProps) {
           ],
         },
         {
-          stageName: 'DeployCloudFormationStacks',
-          actions: [deployAction],
+          stageName: 'DeployBeta',
+          actions: [betaDeployAction],
         },
+          {
+              stageName: 'ApproveAndDeployProd',
+              actions: [prodApprovalAction, prodDeployAction],
+          },
       ],
     });
   }
