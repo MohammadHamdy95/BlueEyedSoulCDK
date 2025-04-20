@@ -1,0 +1,15 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto21
+  build:
+    commands:
+      - echo "Building the project..."
+      - ./gradlew clean build
+  post_build:
+    commands:
+artifacts:
+  files:
+    - output/lambda.yml
