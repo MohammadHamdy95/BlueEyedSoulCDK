@@ -3,7 +3,7 @@
 // import * as BlueEyedSoulCdk from '../lib/blue_eyed_soul_cdk-stack';
 
 // example test. To run these tests, uncomment this file along with the
-// example resource in lib/blue_eyed_soul_cdk_pipeline.ts
+// example resource in lib/blue-eyed-soul-cdk-pipeline.ts
 test('SQS Queue Created', () => {
 //   const app = new cdk.App();
 //     // WHEN
