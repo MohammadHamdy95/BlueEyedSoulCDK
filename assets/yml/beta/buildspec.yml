@@ -10,12 +10,13 @@ phases:
       - ./gradlew clean build
   post_build:
     commands:
+      - ls -l
       - echo "Clearing previous lambda*.zip files from S3..."
       - aws s3 ls s3://blue-eyed-soul-lambda-code/ | grep lambda- | awk '{print $4}' | while read key; do aws s3 rm s3://blue-eyed-soul-lambda-code/$key; done
       - echo "Packaging artifact..."
       - mkdir -p output
       - cp build/distributions/blueeyedsoul.zip output/lambda-deploy.zip
-      - S3_KEY=$S3_KEY"
+      - S3_KEY=$S3_KEY
       - echo "Uploading ${S3_KEY} to S3..."
       - aws s3 cp output/lambda-deploy.zip s3://blue-eyed-soul-lambda-code/$S3_KEY
       - echo "Packaging artifact..."
