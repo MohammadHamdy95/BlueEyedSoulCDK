@@ -1,15 +1,22 @@
 version: 0.2
 
 phases:
-#  install:
-#    runtime-versions:
-#      java: corretto21
+  install:
+    runtime-versions:
+      java: corretto21
   build:
     commands:
       - echo "Building the project..."
-#      - ./gradlew clean build
+      - ./gradlew clean build
   post_build:
     commands:
-#artifacts:
-#  files:
-#    - output/lambda.yml
+      - echo "Packaging Lambda artifact..."
+      - mkdir -p output
+      - cp build/distributions/blueeyedsoul.zip output/lambda-deploy.zip
+      - cp lambda.yml output/lambda.yml
+
+artifacts:
+  files:
+    - lambda-deploy.zip
+    - lambda.yml
+  base-directory: output

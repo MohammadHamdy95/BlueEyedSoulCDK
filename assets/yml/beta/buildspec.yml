@@ -24,6 +24,5 @@ phases:
       - cp lambda.yml output/lambda.yml  # 👈 copy the infra template to output folder
 artifacts:
   files:
-    - lambda.yml
     - lambda-deploy.zip
   base-directory: output
