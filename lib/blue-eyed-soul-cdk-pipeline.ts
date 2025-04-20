@@ -64,7 +64,7 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
             ],
         });
 
-        addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, buildOutput, sourceOutput, betaPreBuildOutput, betaUploadOutput);
+        addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, sourceOutput, sourceOutput, betaPreBuildOutput, betaUploadOutput);
         addDeployStage(this, pipeline, 'ApproveAndDeployProd', true, s3Key, buildOutput, sourceOutput, undefined, prodUploadOutput);
     }
 }
@@ -98,7 +98,7 @@ function addDeployStage(
             actionName: 'BetaPreBuildCheck',
             project: betaPreBuildProject,
             runOrder: 1,
-            input: inputArtifact
+            input: inputArtifact,
         });
 
         actions.push(betaPreBuildAction);
