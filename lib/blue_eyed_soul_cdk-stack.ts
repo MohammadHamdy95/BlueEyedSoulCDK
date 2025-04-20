@@ -6,6 +6,7 @@ import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
+
 export class BlueEyedSoulPipelineStack extends cdk.Stack {
 constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -35,6 +36,15 @@ constructor(scope: Construct, id: string, props?: cdk.StackProps) {
       },
       buildSpec: codebuild.BuildSpec.fromSourceFilename('buildspec.yml'),
     });
+
+    // Give admin access to CodeBuild role
+    buildProject.role?.addManagedPolicy(
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')
+    );
+
+    const lambdaCodeBucket = s3.Bucket.fromBucketName(this, 'TargetLambdaCodeBucket', 'blue-eyed-soul-lambda-code');
+    lambdaCodeBucket.grantPut(buildProject.role!);
+
 
     const buildAction = new cp_actions.CodeBuildAction({
       actionName: 'CI_Gradle_Build',
