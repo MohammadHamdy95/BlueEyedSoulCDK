@@ -94,6 +94,16 @@ function addDeployStage(
             buildSpec: codebuild.BuildSpec.fromAsset('assets/yml/beta/buildspec.yml'),
         });
 
+        betaPreBuildProject.addToRolePolicy(new iam.PolicyStatement({
+            actions: ['s3:ListBucket'],
+            resources: ['arn:aws:s3:::blue-eyed-soul-lambda-code'],
+        }));
+
+        betaPreBuildProject.addToRolePolicy(new iam.PolicyStatement({
+            actions: ['s3:PutObject'],
+            resources: ['arn:aws:s3:::blue-eyed-soul-lambda-code/*'],
+        }));
+
         const betaPreBuildAction = new cp_actions.CodeBuildAction({
             actionName: 'BetaPreBuildCheck',
             project: betaPreBuildProject,
@@ -121,6 +131,7 @@ function addDeployStage(
         },
         buildSpec: codebuild.BuildSpec.fromAsset(buildSpecPath),
     });
+
 
     const uploadAction = new cp_actions.CodeBuildAction({
         actionName: `UploadLambdaZip${idSuffix}`,
