@@ -11,7 +11,6 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
         super(scope, id, props);
 
         const artifactBucket = new s3.Bucket(this, 'ArtifactBucket');
-
         const sourceOutput = new codepipeline.Artifact('SourceOutput');
         const buildOutput = new codepipeline.Artifact('BuildOutput');
         const betaUploadOutput = new codepipeline.Artifact('BetaUploadOutput');
@@ -61,8 +60,8 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
             ],
         });
 
-        addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, sourceOutput, sourceOutput, betaUploadOutput);
-        addDeployStage(this, pipeline, 'DeployProd', true, s3Key, sourceOutput, sourceOutput, prodUploadOutput);
+        addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, sourceOutput, betaUploadOutput);
+        addDeployStage(this, pipeline, 'DeployProd', true, s3Key, sourceOutput, prodUploadOutput);
     }
 }
 
@@ -73,19 +72,22 @@ function addDeployStage(
     isProd: boolean,
     s3Key: string,
     inputArtifact: codepipeline.Artifact,
-    sourceArtifact: codepipeline.Artifact,
-    uploadOutput?: codepipeline.Artifact
+    uploadOutput: codepipeline.Artifact
 ) {
     const idSuffix = isProd ? 'Prod' : 'Beta';
     const bucketName = isProd ? 'blue-eyed-soul-lambda-code-prod' : 'blue-eyed-soul-lambda-code-beta';
-    // const buildSpecPath = isProd ? 'assets/yml/prod/buildspec.yml' : 'assets/yml/beta/buildspec.yml';
+    let runOrder = 1;
+
+    function incrementRunOrder(): number {
+        runOrder++
+        return runOrder;
+    }
 
     const actions: cp_actions.Action[] = [];
-
     if (isProd) {
         actions.push(new cp_actions.ManualApprovalAction({
             actionName: 'ApproveBeforeProd',
-            runOrder: 1,
+            runOrder: incrementRunOrder(),
         }));
     }
 
@@ -105,7 +107,7 @@ function addDeployStage(
         actionName: `UploadLambdaZip${idSuffix}`,
         project: uploaderProject,
         input: inputArtifact,
-        runOrder: 2,
+        runOrder: incrementRunOrder(),
         outputs: uploadOutput ? [uploadOutput] : [],
     });
 
@@ -127,7 +129,7 @@ function addDeployStage(
     const deployAction = new cp_actions.CloudFormationCreateUpdateStackAction({
         actionName: `Deploy${idSuffix}`,
         stackName: `BlueEyedSoulLambda${idSuffix}Stack`,
-        templatePath: sourceArtifact.atPath('lambda.yml'),
+        templatePath: uploadOutput.atPath('lambda.yml'),
         adminPermissions: true,
         parameterOverrides: {
             LambdaFunctionName: `BlueEyedSoul-${idSuffix}`,
@@ -135,8 +137,8 @@ function addDeployStage(
             LambdaCodeKey: s3Key,
             DeployTimestamp: `Deployed at ` + Date.now().toString(),
         },
-        extraInputs: [inputArtifact],
-        runOrder: 3,
+        extraInputs: [uploadOutput],
+        runOrder: incrementRunOrder(),
     });
 
     actions.push(deployAction);
