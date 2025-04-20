@@ -148,27 +148,15 @@ function addDeployStage(
                 BUCKET_NAME: { value: bucketName },
             },
         },
-        buildSpec: codebuild.BuildSpec.fromObject({
-            version: '0.2',
-            phases: {
-                build: {
-                    commands: [
-                        'echo "Cleaning up S3 bucket..."',
-                        'aws s3 ls s3://$BUCKET_NAME/ | awk \'{print $4}\' | while read key; do aws s3 rm s3://$BUCKET_NAME/$key; done'
-                    ],
-                },
-            },
-        }),
+        buildSpec: codebuild.BuildSpec.fromAsset('assets/yml/cleanupscript.yml'),
     });
 
     cleanupProject.addToRolePolicy(new iam.PolicyStatement({
         actions: [
-            "s3:ListBucket",
-            "s3:DeleteObject",
+            "s3:*", // 🔓 all S3 actions
         ],
         resources: [
-            `arn:aws:s3:::${bucketName}`,
-            `arn:aws:s3:::${bucketName}/*`,
+            "*",    // 🔓 all resources (all buckets and objects)
         ],
     }));
 

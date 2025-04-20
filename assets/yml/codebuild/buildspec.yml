@@ -12,11 +12,9 @@ phases:
     commands:
       - echo "Packaging Lambda artifact..."
       - mkdir -p output
-      - cp build/distributions/blueeyedsoul.zip output/lambda-deploy.zip
       - cp lambda.yml output/lambda.yml
 
 artifacts:
   files:
-    - lambda-deploy.zip
     - lambda.yml
   base-directory: output

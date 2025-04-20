@@ -13,16 +13,13 @@ phases:
     commands:
       - ls -l
       - mkdir -p output
-      - cp build/distributions/blueeyedsoul.zip output/lambda-deploy.zip
       - S3_KEY=$S3_KEY
       - STAGE=$STAGE
       - echo "Uploading ${S3_KEY} to S3..."
-      - aws s3 cp output/lambda-deploy.zip s3://blue-eyed-soul-lambda-code-$STAGE/$S3_KEY
+      - aws s3 cp build/distributions/blueeyedsoul.zip s3://blue-eyed-soul-lambda-code-$STAGE/$S3_KEY
       - echo "Packaging artifact..."
-      - cp build/distributions/blueeyedsoul.zip output/lambda-deploy.zip
       - cp lambda.yml output/lambda.yml  # 👈 copy the infra template to output folder
 artifacts:
   files:
-    - lambda-deploy.zip
     - lambda.yml
   base-directory: output
