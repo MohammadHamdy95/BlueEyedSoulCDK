@@ -16,9 +16,7 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
         const buildOutput = new codepipeline.Artifact('BuildOutput');
         const betaUploadOutput = new codepipeline.Artifact('BetaUploadOutput');
         const prodUploadOutput = new codepipeline.Artifact('ProdUploadOutput');
-
-        const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
-        const s3Key = `lambda-${timestamp}.zip`;
+        const s3Key = `blue-eyed-soul.zip`;
 
         const sourceAction = new cp_actions.CodeStarConnectionsSourceAction({
             actionName: 'BlueEyedSoulRepo',
@@ -80,7 +78,7 @@ function addDeployStage(
 ) {
     const idSuffix = isProd ? 'Prod' : 'Beta';
     const bucketName = isProd ? 'blue-eyed-soul-lambda-code-prod' : 'blue-eyed-soul-lambda-code-beta';
-    const buildSpecPath = isProd ? 'assets/yml/prod/buildspec.yml' : 'assets/yml/beta/buildspec.yml';
+    // const buildSpecPath = isProd ? 'assets/yml/prod/buildspec.yml' : 'assets/yml/beta/buildspec.yml';
 
     const actions: cp_actions.Action[] = [];
 
@@ -97,9 +95,10 @@ function addDeployStage(
             environmentVariables: {
                 S3_BUCKET: { value: bucketName },
                 S3_KEY: { value: s3Key },
+                STAGE: { value: isProd ? `prod` : 'beta' },
             },
         },
-        buildSpec: codebuild.BuildSpec.fromAsset(buildSpecPath),
+        buildSpec: codebuild.BuildSpec.fromAsset(`assets/yml/beta/buildspec.yml`),
     });
 
     const uploadAction = new cp_actions.CodeBuildAction({
@@ -118,8 +117,8 @@ function addDeployStage(
             "s3:ListBucket",
         ],
         resources: [
-            "arn:aws:s3:::blue-eyed-soul-lambda-code",       // Needed for ListBucket
-            "arn:aws:s3:::blue-eyed-soul-lambda-code/*",     // Needed for PutObject
+            "arn:aws:s3:::blue-eyed-soul-lambda-code*",
+            "arn:aws:s3:::blue-eyed-soul-lambda-code*/*",
         ],
     }));
 
@@ -134,12 +133,53 @@ function addDeployStage(
             LambdaFunctionName: `BlueEyedSoul-${idSuffix}`,
             LambdaCodeBucket: bucketName,
             LambdaCodeKey: s3Key,
+            DeployTimestamp: Date.now().toString(),
         },
         extraInputs: [inputArtifact],
         runOrder: 3,
     });
 
     actions.push(deployAction);
+
+    const cleanupProject = new codebuild.PipelineProject(scope, `Cleanup${idSuffix}`, {
+        environment: {
+            buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
+            environmentVariables: {
+                BUCKET_NAME: { value: bucketName },
+            },
+        },
+        buildSpec: codebuild.BuildSpec.fromObject({
+            version: '0.2',
+            phases: {
+                build: {
+                    commands: [
+                        'echo "Cleaning up S3 bucket..."',
+                        'aws s3 ls s3://$BUCKET_NAME/ | awk \'{print $4}\' | while read key; do aws s3 rm s3://$BUCKET_NAME/$key; done'
+                    ],
+                },
+            },
+        }),
+    });
+
+    cleanupProject.addToRolePolicy(new iam.PolicyStatement({
+        actions: [
+            "s3:ListBucket",
+            "s3:DeleteObject",
+        ],
+        resources: [
+            `arn:aws:s3:::${bucketName}`,
+            `arn:aws:s3:::${bucketName}/*`,
+        ],
+    }));
+
+    const cleanupAction = new cp_actions.CodeBuildAction({
+        actionName: `CleanupBucket${idSuffix}`,
+        project: cleanupProject,
+        input: inputArtifact,
+        runOrder: 4,
+    });
+
+    actions.push(cleanupAction);
 
     pipeline.addStage({
         stageName,

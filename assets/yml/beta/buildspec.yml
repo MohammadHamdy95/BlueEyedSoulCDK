@@ -17,8 +17,9 @@ phases:
       - mkdir -p output
       - cp build/distributions/blueeyedsoul.zip output/lambda-deploy.zip
       - S3_KEY=$S3_KEY
+      - STAGE=$STAGE
       - echo "Uploading ${S3_KEY} to S3..."
-      - aws s3 cp output/lambda-deploy.zip s3://blue-eyed-soul-lambda-code/$S3_KEY
+      - aws s3 cp output/lambda-deploy.zip s3://blue-eyed-soul-lambda-code-$STAGE/$S3_KEY
       - echo "Packaging artifact..."
       - mkdir -p output
       - cp build/distributions/blueeyedsoul.zip output/lambda-deploy.zip
