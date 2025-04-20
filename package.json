@@ -29,7 +29,8 @@
     "@aws-cdk/aws-iam": "^1.203.0",
     "@aws-cdk/aws-inspectorv2": "^1.203.0",
     "@aws-cdk/aws-s3": "^1.203.0",
-    "aws-cdk-lib": "2.189.0",
+    "@aws-cdk/aws-scheduler-alpha": "^2.140.0-alpha.0",
+    "aws-cdk-lib": "^2.140.0",
     "constructs": "^10.4.2"
   }
 }
