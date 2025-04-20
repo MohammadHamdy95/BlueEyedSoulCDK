@@ -141,34 +141,6 @@ function addDeployStage(
 
     actions.push(deployAction);
 
-    const cleanupProject = new codebuild.PipelineProject(scope, `Cleanup${idSuffix}`, {
-        environment: {
-            buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
-            environmentVariables: {
-                BUCKET_NAME: { value: bucketName },
-            },
-        },
-        buildSpec: codebuild.BuildSpec.fromAsset('assets/yml/cleanupscript.yml'),
-    });
-
-    cleanupProject.addToRolePolicy(new iam.PolicyStatement({
-        actions: [
-            "s3:*", // 🔓 all S3 actions
-        ],
-        resources: [
-            "*",    // 🔓 all resources (all buckets and objects)
-        ],
-    }));
-
-    const cleanupAction = new cp_actions.CodeBuildAction({
-        actionName: `CleanupBucket${idSuffix}`,
-        project: cleanupProject,
-        input: inputArtifact,
-        runOrder: 4,
-    });
-
-    actions.push(cleanupAction);
-
     pipeline.addStage({
         stageName,
         actions,

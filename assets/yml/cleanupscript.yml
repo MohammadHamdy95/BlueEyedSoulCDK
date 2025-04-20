@@ -1,7 +1,0 @@
-version: 0.2
-
-phases:
-  build:
-    commands:
-      - echo "Cleaning up S3 bucket...",
-      - aws s3 ls s3://$BUCKET_NAME/ | awk \'{ print $4 }\' | while read key; do aws s3 rm s3://$BUCKET_NAME/$key; done
