@@ -14,6 +14,9 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
 
         const sourceOutput = new codepipeline.Artifact('SourceOutput');
         const buildOutput = new codepipeline.Artifact('BuildOutput');
+        const betaPreBuildOutput = new codepipeline.Artifact('BetaPreBuildOutput');
+        const betaUploadOutput = new codepipeline.Artifact('BetaUploadOutput');
+        const prodUploadOutput = new codepipeline.Artifact('ProdUploadOutput');
 
         const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
         const s3Key = `lambda-${timestamp}.zip`;
@@ -61,8 +64,8 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
             ],
         });
 
-        addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, buildOutput, sourceOutput);
-        addDeployStage(this, pipeline, 'ApproveAndDeployProd', true, s3Key, buildOutput, sourceOutput);
+        addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, buildOutput, sourceOutput, betaPreBuildOutput, betaUploadOutput);
+        addDeployStage(this, pipeline, 'ApproveAndDeployProd', true, s3Key, buildOutput, sourceOutput, undefined, prodUploadOutput);
     }
 }
 
@@ -73,7 +76,9 @@ function addDeployStage(
     isProd: boolean,
     s3Key: string,
     inputArtifact: codepipeline.Artifact,
-    sourceArtifact: codepipeline.Artifact
+    sourceArtifact: codepipeline.Artifact,
+    preBuildOutput?: codepipeline.Artifact,
+    uploadOutput?: codepipeline.Artifact
 ) {
     const idSuffix = isProd ? 'Prod' : 'Beta';
     const bucketName = isProd ? 'blue-eyed-soul-lambda-code-prod' : 'blue-eyed-soul-lambda-code-beta';
@@ -92,8 +97,8 @@ function addDeployStage(
         const betaPreBuildAction = new cp_actions.CodeBuildAction({
             actionName: 'BetaPreBuildCheck',
             project: betaPreBuildProject,
-            input: inputArtifact,
             runOrder: 1,
+            input: inputArtifact
         });
 
         actions.push(betaPreBuildAction);
@@ -122,6 +127,7 @@ function addDeployStage(
         project: uploaderProject,
         input: inputArtifact,
         runOrder: 2,
+        outputs: uploadOutput ? [uploadOutput] : [],
     });
 
     actions.push(uploadAction);
