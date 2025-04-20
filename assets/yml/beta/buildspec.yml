@@ -11,7 +11,6 @@ phases:
       - ./gradlew clean build
   post_build:
     commands:
-      - ls -l
       - mkdir -p output
       - S3_KEY=$S3_KEY
       - STAGE=$STAGE
