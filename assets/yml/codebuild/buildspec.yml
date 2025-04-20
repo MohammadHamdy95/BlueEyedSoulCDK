@@ -10,6 +10,6 @@ phases:
       - ./gradlew clean build
   post_build:
     commands:
-artifacts:
-  files:
-    - output/lambda.yml
+#artifacts:
+#  files:
+#    - output/lambda.yml
