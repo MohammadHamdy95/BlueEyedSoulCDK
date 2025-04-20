@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto21
+  build:
+    commands:
+      - echo "Building the project..."
+      - ./gradlew clean build
+  post_build:
+    commands:
+      - echo "Packaging Lambda artifact..."
+      - mkdir -p output
+      - cp lambda.yml output/lambda.yml
+
+artifacts:
+  files:
+    - lambda.yml
+  base-directory: output
