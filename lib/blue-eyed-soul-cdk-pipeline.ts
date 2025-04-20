@@ -14,7 +14,6 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
 
         const sourceOutput = new codepipeline.Artifact('SourceOutput');
         const buildOutput = new codepipeline.Artifact('BuildOutput');
-        const betaPreBuildOutput = new codepipeline.Artifact('BetaPreBuildOutput');
         const betaUploadOutput = new codepipeline.Artifact('BetaUploadOutput');
         const prodUploadOutput = new codepipeline.Artifact('ProdUploadOutput');
 
@@ -22,7 +21,7 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
         const s3Key = `lambda-${timestamp}.zip`;
 
         const sourceAction = new cp_actions.CodeStarConnectionsSourceAction({
-            actionName: 'GitHub_Source',
+            actionName: 'BlueEyedSoulRepo',
             owner: 'MohammadHamdy95',
             repo: 'blueeyedsoul-be',
             branch: 'main',
@@ -64,8 +63,8 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
             ],
         });
 
-        addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, sourceOutput, sourceOutput, betaPreBuildOutput, betaUploadOutput);
-        addDeployStage(this, pipeline, 'ApproveAndDeployProd', true, s3Key, buildOutput, sourceOutput, undefined, prodUploadOutput);
+        addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, sourceOutput, sourceOutput, betaUploadOutput);
+        addDeployStage(this, pipeline, 'DeployProd', true, s3Key, buildOutput, sourceOutput, prodUploadOutput);
     }
 }
 
@@ -77,7 +76,6 @@ function addDeployStage(
     s3Key: string,
     inputArtifact: codepipeline.Artifact,
     sourceArtifact: codepipeline.Artifact,
-    preBuildOutput?: codepipeline.Artifact,
     uploadOutput?: codepipeline.Artifact
 ) {
     const idSuffix = isProd ? 'Prod' : 'Beta';
@@ -85,34 +83,6 @@ function addDeployStage(
     const buildSpecPath = isProd ? 'assets/yml/prod/buildspec.yml' : 'assets/yml/beta/buildspec.yml';
 
     const actions: cp_actions.Action[] = [];
-
-    if (!isProd) {
-        const betaPreBuildProject = new codebuild.PipelineProject(scope, `BetaPreUploadBuild`, {
-            environment: {
-                buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
-            },
-            buildSpec: codebuild.BuildSpec.fromAsset('assets/yml/beta/buildspec.yml'),
-        });
-
-        betaPreBuildProject.addToRolePolicy(new iam.PolicyStatement({
-            actions: ['s3:ListBucket'],
-            resources: ['arn:aws:s3:::blue-eyed-soul-lambda-code'],
-        }));
-
-        betaPreBuildProject.addToRolePolicy(new iam.PolicyStatement({
-            actions: ['s3:PutObject'],
-            resources: ['arn:aws:s3:::blue-eyed-soul-lambda-code/*'],
-        }));
-
-        const betaPreBuildAction = new cp_actions.CodeBuildAction({
-            actionName: 'BetaPreBuildCheck',
-            project: betaPreBuildProject,
-            runOrder: 1,
-            input: inputArtifact,
-        });
-
-        actions.push(betaPreBuildAction);
-    }
 
     if (isProd) {
         actions.push(new cp_actions.ManualApprovalAction({
@@ -132,7 +102,6 @@ function addDeployStage(
         buildSpec: codebuild.BuildSpec.fromAsset(buildSpecPath),
     });
 
-
     const uploadAction = new cp_actions.CodeBuildAction({
         actionName: `UploadLambdaZip${idSuffix}`,
         project: uploaderProject,
@@ -140,6 +109,19 @@ function addDeployStage(
         runOrder: 2,
         outputs: uploadOutput ? [uploadOutput] : [],
     });
+
+    uploaderProject.addToRolePolicy(new iam.PolicyStatement({
+        actions: [
+            "s3:PutObject",
+            "s3:GetObject",
+            "s3:DeleteObject",
+            "s3:ListBucket",
+        ],
+        resources: [
+            "arn:aws:s3:::blue-eyed-soul-lambda-code",       // Needed for ListBucket
+            "arn:aws:s3:::blue-eyed-soul-lambda-code/*",     // Needed for PutObject
+        ],
+    }));
 
     actions.push(uploadAction);
 
