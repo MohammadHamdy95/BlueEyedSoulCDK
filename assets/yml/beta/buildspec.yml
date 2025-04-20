@@ -6,23 +6,20 @@ phases:
       java: corretto21
   build:
     commands:
-      - echo "Building the project..."
-      - ./gradlew clean build
+      - ls -l
+#      - echo "Building the project..."
+#      - ./gradlew clean build
   post_build:
     commands:
-      - ls -l
-      - echo "Clearing previous lambda*.zip files from S3..."
-      - aws s3 ls s3://blue-eyed-soul-lambda-code/ | grep lambda- | awk '{print $4}' | while read key; do aws s3 rm s3://blue-eyed-soul-lambda-code/$key; done
-      - echo "Packaging artifact..."
-      - mkdir -p output
-      - cp build/distributions/blueeyedsoul.zip output/lambda-deploy.zip
+#      - ls -l
+#      - cp build/distributions/blueeyedsoul.zip output/lambda-deploy.zip
       - S3_KEY=$S3_KEY
       - STAGE=$STAGE
       - echo "Uploading ${S3_KEY} to S3..."
-      - aws s3 cp output/lambda-deploy.zip s3://blue-eyed-soul-lambda-code-$STAGE/$S3_KEY
+      - aws s3 cp lambda-deploy.zip s3://blue-eyed-soul-lambda-code-$STAGE/$S3_KEY
       - echo "Packaging artifact..."
       - mkdir -p output
-      - cp build/distributions/blueeyedsoul.zip output/lambda-deploy.zip
+      - cp lambda-deploy.zip output/lambda-deploy.zip
       - cp lambda.yml output/lambda.yml  # 👈 copy the infra template to output folder
 artifacts:
   files:
