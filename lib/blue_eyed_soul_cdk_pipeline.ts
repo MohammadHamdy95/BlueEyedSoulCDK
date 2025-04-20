@@ -54,12 +54,6 @@ constructor(scope: Construct, id: string, props?: cdk.StackProps) {
       runOrder: 2,
     });
 
-    // Manual approval
-    const manualApproval = new cp_actions.ManualApprovalAction({
-      actionName: 'ApproveBeforeBuildAndDeploy',
-      runOrder: 1,
-    });
-
     // Deploy stage: CloudFormation
     const deployAction = new cp_actions.CloudFormationCreateUpdateStackAction({
       actionName: 'DeployStacks',
@@ -81,7 +75,6 @@ constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         {
           stageName: 'GradleBuild',
           actions: [
-            manualApproval,
             buildAction,
           ],
         },
