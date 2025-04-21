@@ -6,21 +6,21 @@ import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
-import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
 
 export class BlueEyedSoulPipelineStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
         const artifactBucket = new s3.Bucket(this, 'ArtifactBucket');
+
         const sourceOutput = new codepipeline.Artifact('SourceOutput');
         const buildOutput = new codepipeline.Artifact('BuildOutput');
         const betaUploadOutput = new codepipeline.Artifact('BetaUploadOutput');
         const prodUploadOutput = new codepipeline.Artifact('ProdUploadOutput');
-        const s3Key = `blue-eyed-soul.zip`;
+        const s3Key = 'blue-eyed-soul.zip';
 
         const sourceAction = new cp_actions.CodeStarConnectionsSourceAction({
-            actionName: 'BlueEyedSoulRepo',
+            actionName: 'Source',
             owner: 'MohammadHamdy95',
             repo: 'blueeyedsoul-be',
             branch: 'main',
@@ -28,9 +28,10 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
             connectionArn: 'arn:aws:codeconnections:us-west-2:276366037431:connection/fff370e6-5cf3-4e4b-8087-4c3332b8eff6',
         });
 
-        const buildProject = new codebuild.PipelineProject(this, 'GradleBuildProject', {
+        const buildProject = new codebuild.PipelineProject(this, 'BuildProject', {
             environment: {
-                buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
+                buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2_5,
+                computeType: codebuild.ComputeType.SMALL,
             },
             buildSpec: codebuild.BuildSpec.fromAsset('assets/yml/codebuild/buildspec.yml'),
         });
@@ -39,26 +40,19 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
             iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')
         );
 
-        const gradleBuildAction = new cp_actions.CodeBuildAction({
-            actionName: 'GradleBuildAction',
+        const buildAction = new cp_actions.CodeBuildAction({
+            actionName: 'Build',
             project: buildProject,
             input: sourceOutput,
             outputs: [buildOutput],
-            runOrder: 1,
         });
 
-        const pipeline = new codepipeline.Pipeline(this, 'BlueEyedSoulLambdaPipeline', {
+        const pipeline = new codepipeline.Pipeline(this, 'Pipeline', {
             pipelineName: 'BlueEyedSoulLambdaPipeline',
             artifactBucket,
             stages: [
-                {
-                    stageName: 'Source',
-                    actions: [sourceAction],
-                },
-                {
-                    stageName: 'Build',
-                    actions: [gradleBuildAction],
-                },
+                { stageName: 'Source', actions: [sourceAction] },
+                { stageName: 'Build', actions: [buildAction] },
             ],
         });
 
@@ -81,87 +75,71 @@ function addDeployStage(
     uploadOutput: codepipeline.Artifact
 ) {
     const idSuffix = isProd ? 'Prod' : 'Beta';
-    const bucketName = isProd ? 'blue-eyed-soul-lambda-code-prod' : 'blue-eyed-soul-lambda-code-beta';
+    const bucketName = `blue-eyed-soul-lambda-code-${isProd ? 'prod' : 'beta'}`;
     let runOrder = 1;
-
-    function incrementRunOrder(): number {
-        runOrder++
-        return runOrder;
-    }
+    const nextOrder = () => runOrder++;
 
     const actions: cp_actions.Action[] = [];
+
     if (isProd) {
         const waitStateMachine = new sfn.StateMachine(scope, `WaitStateMachine${idSuffix}`, {
-            stateMachineName: `Wait1HourStateMachine${idSuffix}`,
-            definition: new sfn.Wait(scope, `Wait1Hour${idSuffix}`, {
-                time: sfn.WaitTime.duration(cdk.Duration.hours(1)),
+            stateMachineName: `Wait10Minutes-${idSuffix}`,
+            definition: new sfn.Wait(scope, `Wait10Minutes`, {
+                time: sfn.WaitTime.duration(cdk.Duration.minutes(10)),
             }),
         });
 
-        const waitAction = new cp_actions.StepFunctionInvokeAction({
-            actionName: `Wait1Hour${idSuffix}`,
+        actions.push(new cp_actions.StepFunctionInvokeAction({
+            actionName: 'Wait10Minutes',
             stateMachine: waitStateMachine,
             stateMachineInput: cp_actions.StateMachineInput.literal({}),
-            runOrder: incrementRunOrder(),
-        });
-
-        actions.push(waitAction);
+            runOrder: nextOrder(),
+        }));
     }
 
     const uploaderProject = new codebuild.PipelineProject(scope, `Uploader${idSuffix}`, {
         environment: {
-            buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
+            buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2_5,
+            computeType: codebuild.ComputeType.SMALL,
             environmentVariables: {
                 S3_BUCKET: { value: bucketName },
                 S3_KEY: { value: s3Key },
-                STAGE: { value: isProd ? `prod` : 'beta' },
+                STAGE: { value: isProd ? 'prod' : 'beta' },
             },
         },
-        buildSpec: codebuild.BuildSpec.fromAsset(`assets/yml/beta/buildspec.yml`),
-    });
-
-    const uploadAction = new cp_actions.CodeBuildAction({
-        actionName: `UploadLambdaZip${idSuffix}`,
-        project: uploaderProject,
-        input: inputArtifact,
-        runOrder: incrementRunOrder(),
-        outputs: uploadOutput ? [uploadOutput] : [],
+        buildSpec: codebuild.BuildSpec.fromAsset('assets/yml/beta/buildspec.yml'),
     });
 
     uploaderProject.addToRolePolicy(new iam.PolicyStatement({
-        actions: [
-            "s3:PutObject",
-            "s3:GetObject",
-            "s3:DeleteObject",
-            "s3:ListBucket",
-        ],
+        actions: ['s3:*'],
         resources: [
-            "arn:aws:s3:::blue-eyed-soul-lambda-code*",
-            "arn:aws:s3:::blue-eyed-soul-lambda-code*/*",
+            `arn:aws:s3:::${bucketName}`,
+            `arn:aws:s3:::${bucketName}/*`,
         ],
     }));
 
-    actions.push(uploadAction);
+    actions.push(new cp_actions.CodeBuildAction({
+        actionName: `UploadLambda${idSuffix}`,
+        project: uploaderProject,
+        input: inputArtifact,
+        outputs: [uploadOutput],
+        runOrder: nextOrder(),
+    }));
 
-    const deployAction = new cp_actions.CloudFormationCreateUpdateStackAction({
+    actions.push(new cp_actions.CloudFormationCreateUpdateStackAction({
         actionName: `Deploy${idSuffix}`,
-        stackName: `BlueEyedSoulLambda${idSuffix}Stack`,
+        stackName: `BlueEyedSoulLambda${idSuffix}`,
         templatePath: uploadOutput.atPath('lambda.yml'),
         adminPermissions: true,
         parameterOverrides: {
             LambdaFunctionName: `BlueEyedSoul-${idSuffix}`,
             LambdaCodeBucket: bucketName,
             LambdaCodeKey: s3Key,
-            DeployTimestamp: `Deployed at ` + Date.now().toString(),
+            DeployTimestamp: new Date().toISOString(),
         },
         extraInputs: [uploadOutput],
-        runOrder: incrementRunOrder(),
-    });
+        runOrder: nextOrder(),
+    }));
 
-    actions.push(deployAction);
-
-    pipeline.addStage({
-        stageName,
-        actions,
-    });
+    pipeline.addStage({ stageName, actions });
 }
