@@ -5,6 +5,8 @@ import * as cp_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
+import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
 
 export class BlueEyedSoulPipelineStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -60,6 +62,10 @@ export class BlueEyedSoulPipelineStack extends cdk.Stack {
             ],
         });
 
+        pipeline.role?.addManagedPolicy(
+            iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')
+        );
+
         addDeployStage(this, pipeline, 'DeployBeta', false, s3Key, sourceOutput, betaUploadOutput);
         addDeployStage(this, pipeline, 'DeployProd', true, s3Key, sourceOutput, prodUploadOutput);
     }
@@ -85,10 +91,21 @@ function addDeployStage(
 
     const actions: cp_actions.Action[] = [];
     if (isProd) {
-        actions.push(new cp_actions.ManualApprovalAction({
-            actionName: 'ApproveBeforeProd',
+        const waitStateMachine = new sfn.StateMachine(scope, `WaitStateMachine${idSuffix}`, {
+            stateMachineName: `Wait1HourStateMachine${idSuffix}`,
+            definition: new sfn.Wait(scope, `Wait1Hour${idSuffix}`, {
+                time: sfn.WaitTime.duration(cdk.Duration.hours(1)),
+            }),
+        });
+
+        const waitAction = new cp_actions.StepFunctionInvokeAction({
+            actionName: `Wait1Hour${idSuffix}`,
+            stateMachine: waitStateMachine,
+            stateMachineInput: cp_actions.StateMachineInput.literal({}),
             runOrder: incrementRunOrder(),
-        }));
+        });
+
+        actions.push(waitAction);
     }
 
     const uploaderProject = new codebuild.PipelineProject(scope, `Uploader${idSuffix}`, {
