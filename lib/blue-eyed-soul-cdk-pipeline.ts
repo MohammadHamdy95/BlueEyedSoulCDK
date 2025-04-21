@@ -128,7 +128,7 @@ function addDeployStage(
 
     actions.push(new cp_actions.CloudFormationCreateUpdateStackAction({
         actionName: `Deploy${idSuffix}`,
-        stackName: `BlueEyedSoulLambda${idSuffix}`,
+        stackName: `BlueEyedSoulLambda${idSuffix}Stack`,
         templatePath: uploadOutput.atPath('lambda.yml'),
         adminPermissions: true,
         parameterOverrides: {
