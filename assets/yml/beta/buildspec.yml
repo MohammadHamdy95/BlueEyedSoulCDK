@@ -11,8 +11,7 @@ phases:
       - ./gradlew generateYaml
   post_build:
     commands:
-      - echo "Clearing previous lambda*.zip files from S3..."
-      - aws s3 ls s3://blue-eyed-soul-lambda-code-$STAGE/ | grep lambda- | awk '{print $4}' | while read key; do aws s3 rm s3://blue-eyed-soul-lambda-code/$key; done
+      - aws s3 rm s3://blue-eyed-soul-lambda-code-$STAGE/ --recursive
       - mkdir -p output
       - S3_KEY=$S3_KEY
       - GOOD_KEY=$(grep 'S3Key:' lambda.yml | awk '{print $2}')
@@ -21,6 +20,7 @@ phases:
       - aws s3 cp build/distributions/blueeyedsoul.zip s3://blue-eyed-soul-lambda-code-$STAGE/$GOOD_KEY
       - echo "Packaging artifact..."
       - cp lambda.yml output/lambda.yml  # 👈 copy the infra template to output folder
+
 artifacts:
   files:
     - lambda.yml
