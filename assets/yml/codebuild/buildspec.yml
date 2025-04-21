@@ -8,6 +8,7 @@ phases:
     commands:
       - echo "Building the project..."
       - ./gradlew clean build
+      - ./gradlew generateYaml
   post_build:
     commands:
       - echo "Packaging Lambda artifact..."

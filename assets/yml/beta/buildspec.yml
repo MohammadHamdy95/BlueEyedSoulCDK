@@ -8,8 +8,11 @@ phases:
     commands:
       - echo "Building the project..."
       - ./gradlew clean build
+      - ./gradlew generateYaml
   post_build:
     commands:
+      - echo "Clearing previous lambda*.zip files from S3..."
+      - aws s3 ls s3://blue-eyed-soul-lambda-code/ | grep lambda- | awk '{print $4}' | while read key; do aws s3 rm s3://blue-eyed-soul-lambda-code/$key; done
       - mkdir -p output
       - S3_KEY=$S3_KEY
       - STAGE=$STAGE
