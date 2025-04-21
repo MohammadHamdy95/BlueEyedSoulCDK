@@ -6,7 +6,6 @@ phases:
       java: corretto21
   build:
     commands:
-      - ls -l
       - echo "Building the project..."
       - ./gradlew clean build
   post_build:
