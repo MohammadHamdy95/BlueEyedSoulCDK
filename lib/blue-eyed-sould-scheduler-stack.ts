@@ -48,7 +48,7 @@ export class BlueEyedSoulSchedulerStack extends cdk.Stack {
             target: {
                 arn: lambdaArn,
                 roleArn: schedulerRole.roleArn,
-                input: JSON.stringify({ operation: 'TokenCheck' }),
+                input: JSON.stringify({ operation: 'DailyScreen' }),
             },
             state: 'ENABLED',
         });
