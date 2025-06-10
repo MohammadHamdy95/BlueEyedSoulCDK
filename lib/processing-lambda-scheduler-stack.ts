@@ -20,10 +20,10 @@ export class ProcessingLambdaSchedulerStack extends cdk.Stack {
         }));
 
         // Example: Every 5 minutes task
-        new scheduler.CfnSchedule(this, 'ProcessingCheckSchedule', {
-            name: 'ProcessingCheckSchedule',
+        new scheduler.CfnSchedule(this, 'PaymentCheckSchedule', {
+            name: 'PaymentCheckSchedule',
             scheduleExpressionTimezone: 'America/Los_Angeles',
-            scheduleExpression: 'rate(5 minutes)',
+            scheduleExpression: 'rate(20 minutes)',
             flexibleTimeWindow: {
                 mode: 'OFF',
             },
@@ -32,7 +32,7 @@ export class ProcessingLambdaSchedulerStack extends cdk.Stack {
                 roleArn: schedulerRole.roleArn,
                 input: JSON.stringify({ operation: 'RefreshQueue' }), // customize as needed
             },
-            description: 'Invokes Processing Lambda every 5 minutes',
+            description: 'Invokes Processing Lambda every 20 minutes',
             state: 'ENABLED',
         });
     }
