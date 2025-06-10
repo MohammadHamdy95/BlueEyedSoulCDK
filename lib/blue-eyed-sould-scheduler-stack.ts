@@ -23,7 +23,7 @@ export class BlueEyedSoulSchedulerStack extends cdk.Stack {
         new scheduler.CfnSchedule(this, 'TokenCheckSchedule-Prod', {
             name: 'TokenCheckSchedule-Prod',
             scheduleExpressionTimezone: 'America/Los_Angeles',
-            scheduleExpression: 'rate(20 minutes)',
+            scheduleExpression: 'rate(1 minute)',
             flexibleTimeWindow: {
                 mode: 'OFF',
             },
@@ -32,7 +32,7 @@ export class BlueEyedSoulSchedulerStack extends cdk.Stack {
                 roleArn: schedulerRole.roleArn,
                 input: JSON.stringify({ operation: 'TokenCheck' }),
             },
-            description: 'Triggers BlueEyedSoul-Prod every 20 minutes',
+            description: 'Triggers BlueEyedSoul-Prod every 1 minute',
             state: 'ENABLED',
         });
 
