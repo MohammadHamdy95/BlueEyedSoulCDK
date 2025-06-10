@@ -7,7 +7,7 @@ export class ProcessingLambdaSchedulerStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
-        const lambdaArn = 'arn:aws:lambda:us-west-2:276366037431:function:proccessing-lambda-stack-ProcessingLambda-6pvXhhTImkDv';
+        const lambdaArn = 'arn:aws:lambda:us-west-2:276366037431:function:ProcessingLambda';
 
         // IAM role for EventBridge Scheduler
         const schedulerRole = new iam.Role(this, 'ProcessingSchedulerRole', {
