@@ -8,7 +8,8 @@ import {BlueEyedSoulDdbStack} from "../lib/blue-eyed-soul-ddb-stack";
 import {BlueEyedSoulSNSStack} from "../lib/blue-eyed-soul-s-n-s-stack";
 
 const app = new cdk.App();
-new BlueEyedSoulPipelineStack(app, 'BlueEyedSoulLambdaPipeline', {});
+//I don't want this anymore.
+// new BlueEyedSoulPipelineStack(app, 'BlueEyedSoulLambdaPipeline', {});
 
 new BlueEyedCodeS3BucketsStack(app, 'BlueEyedCodeS3BucketsStack', {})
 
