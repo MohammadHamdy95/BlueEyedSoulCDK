@@ -5,7 +5,7 @@ import {BlueEyedCodeS3BucketsStack} from "../lib/blue-eyed-code-s3-stack";
 import {BlueEyedSoulSchedulerStack} from "../lib/blue-eyed-sould-scheduler-stack";
 import {ProcessingLambdaSchedulerStack} from "../lib/processing-lambda-scheduler-stack";
 import {BlueEyedSoulDdbStack} from "../lib/blue-eyed-soul-ddb-stack";
-import {BlueEyedSoulSnsStack} from "../lib/blue-eyed-soul-sns-stack";
+import {BlueEyedSoulSNSStack} from "../lib/blue-eyed-soul-s-n-s-stack";
 
 const app = new cdk.App();
 new BlueEyedSoulPipelineStack(app, 'BlueEyedSoulLambdaPipeline', {});
@@ -18,4 +18,4 @@ new ProcessingLambdaSchedulerStack(app, 'ProcessingLambdaSchedulerStack', {})
 
 new BlueEyedSoulDdbStack(app, 'BlueEyedSoulDdbStack', {})
 
-new BlueEyedSoulSnsStack(app, 'BlueEyedSoulSnsStack', {})
+new BlueEyedSoulSNSStack(app, 'BlueEyedSoulSNSStack', {})
