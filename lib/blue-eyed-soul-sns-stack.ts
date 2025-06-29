@@ -2,7 +2,7 @@ import { Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
 import { aws_sns as sns } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
-export class CfSystemsUpdateNotifierStack extends Stack {
+export class BlueEyedSoulSnsStack extends Stack {
     public readonly cfSystemsUpdatesTopic: sns.Topic;
 
     constructor(scope: Construct, id: string, props?: StackProps) {
