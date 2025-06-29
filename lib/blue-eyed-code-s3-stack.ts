@@ -20,5 +20,17 @@ export class BlueEyedCodeS3BucketsStack extends cdk.Stack {
             autoDeleteObjects: true,
             versioned: true,
         });
+
+        // ✅ New bucket for storing published messages by day
+        new s3.Bucket(this, 'ProcessingUpdatesBucket', {
+            bucketName: 'blue-eyed-soul-processing-updates',
+            removalPolicy: cdk.RemovalPolicy.RETAIN, // safer for logs/data
+            versioned: true,
+            lifecycleRules: [
+                {
+                    expiration: cdk.Duration.days(365) // optional: auto-delete after 1 year
+                }
+            ]
+        });
     }
 }
