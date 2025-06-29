@@ -10,7 +10,8 @@ export class BlueEyedSoulDdbStack extends Stack {
             tableName: 'CFSystemsTable',
             partitionKey: { name: 'Username', type: dynamodb.AttributeType.STRING },
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-            removalPolicy: RemovalPolicy.RETAIN
+            removalPolicy: RemovalPolicy.RETAIN,
+            stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES
         });
 
         new dynamodb.Table(this, 'InvoiceTable', {
