@@ -50,7 +50,7 @@ export class BlueEyedSoulSNSStack extends Stack {
 
         const blueEyedSoulInboundUserChangesQueue = new sqs.Queue(this, 'BlueEyedSoulInboundUserChangesQueue', {
             queueName: 'BlueEyedSoulInboundUserChanges',
-            visibilityTimeout: Duration.seconds(30),
+            visibilityTimeout: Duration.seconds(65),
             retentionPeriod: Duration.days(4),
         });
 
