@@ -6,7 +6,7 @@ import {
 } from 'aws-cdk-lib';
 import {Construct} from "constructs";
 
-export class CFSystemsUpdateNotifierStack extends Stack {
+export class CfsystemsUpdateNotifierStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
         super(scope, id, props);
 
