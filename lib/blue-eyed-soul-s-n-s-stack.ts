@@ -13,6 +13,12 @@ export class BlueEyedSoulSNSStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
         super(scope, id, props);
 
+        // === Shared Dead Letter Queue (DLQ) to disable retries ===
+        const deadLetterQueue = new sqs.Queue(this, 'DisabledRetriesDLQ', {
+            queueName: 'DisabledRetriesDLQ',
+            retentionPeriod: Duration.days(14),
+        });
+
         // === First SNS & SQS Setup ===
         this.cfSystemsUpdatesTopic = new sns.Topic(this, 'CFSystemsUpdatesTopic', {
             topicName: 'CFSystemsUpdatesTopic'
@@ -22,6 +28,10 @@ export class BlueEyedSoulSNSStack extends Stack {
             queueName: 'CFSystemsUpdatesQueue',
             visibilityTimeout: Duration.seconds(30),
             retentionPeriod: Duration.days(4),
+            deadLetterQueue: {
+                queue: deadLetterQueue,
+                maxReceiveCount: 1 // disables retries
+            }
         });
 
         this.cfSystemsUpdatesTopic.addSubscription(
@@ -52,6 +62,10 @@ export class BlueEyedSoulSNSStack extends Stack {
             queueName: 'BlueEyedSoulInboundUserChanges',
             visibilityTimeout: Duration.seconds(65),
             retentionPeriod: Duration.days(4),
+            deadLetterQueue: {
+                queue: deadLetterQueue,
+                maxReceiveCount: 1 // disables retries
+            }
         });
 
         this.processingLambdaUpdatesTopic.addSubscription(
