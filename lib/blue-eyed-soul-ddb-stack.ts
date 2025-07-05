@@ -11,7 +11,7 @@ export class BlueEyedSoulDdbStack extends Stack {
             partitionKey: { name: 'Username', type: dynamodb.AttributeType.STRING },
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.RETAIN,
-            stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES
+            // stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES
         });
 
         new dynamodb.Table(this, 'InvoiceTable', {
@@ -44,6 +44,13 @@ export class BlueEyedSoulDdbStack extends Stack {
 
         new dynamodb.Table(this, 'VODAccountsTable', {
             tableName: 'VODAccountsTable',
+            partitionKey: { name: 'Username', type: dynamodb.AttributeType.STRING },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+            removalPolicy: RemovalPolicy.RETAIN
+        });
+
+        new dynamodb.Table(this, 'MbServerTable', {
+            tableName: 'MbServerTable',
             partitionKey: { name: 'Username', type: dynamodb.AttributeType.STRING },
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.RETAIN

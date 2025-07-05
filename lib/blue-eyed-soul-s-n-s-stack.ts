@@ -24,34 +24,34 @@ export class BlueEyedSoulSNSStack extends Stack {
             topicName: 'CFSystemsUpdatesTopic'
         });
 
-        const cfSystemsUpdatesQueue = new sqs.Queue(this, 'CFSystemsUpdatesQueue', {
-            queueName: 'CFSystemsUpdatesQueue',
-            visibilityTimeout: Duration.seconds(30),
-            retentionPeriod: Duration.days(4),
-            deadLetterQueue: {
-                queue: deadLetterQueue,
-                maxReceiveCount: 1 // disables retries
-            }
-        });
+        // const cfSystemsUpdatesQueue = new sqs.Queue(this, 'CFSystemsUpdatesQueue', {
+        //     queueName: 'CFSystemsUpdatesQueue',
+        //     visibilityTimeout: Duration.seconds(30),
+        //     retentionPeriod: Duration.days(4),
+        //     deadLetterQueue: {
+        //         queue: deadLetterQueue,
+        //         maxReceiveCount: 1 // disables retries
+        //     }
+        // });
 
-        this.cfSystemsUpdatesTopic.addSubscription(
-            new subs.SqsSubscription(cfSystemsUpdatesQueue)
-        );
+        // this.cfSystemsUpdatesTopic.addSubscription(
+        //     new subs.SqsSubscription(cfSystemsUpdatesQueue)
+        // );
 
         new CfnOutput(this, 'CFSystemsTopicArn', {
             value: this.cfSystemsUpdatesTopic.topicArn,
             exportName: 'CFSystemsUpdatesTopicArn'
         });
 
-        new CfnOutput(this, 'CFSystemsUpdatesQueueArn', {
-            value: cfSystemsUpdatesQueue.queueArn,
-            exportName: 'CFSystemsUpdatesQueueArn'
-        });
+        // new CfnOutput(this, 'CFSystemsUpdatesQueueArn', {
+        //     value: cfSystemsUpdatesQueue.queueArn,
+        //     exportName: 'CFSystemsUpdatesQueueArn'
+        // });
 
-        new CfnOutput(this, 'CFSystemsUpdatesQueueUrl', {
-            value: cfSystemsUpdatesQueue.queueUrl,
-            exportName: 'CFSystemsUpdatesQueueUrl'
-        });
+        // new CfnOutput(this, 'CFSystemsUpdatesQueueUrl', {
+        //     value: cfSystemsUpdatesQueue.queueUrl,
+        //     exportName: 'CFSystemsUpdatesQueueUrl'
+        // });
 
         // === New SNS & SQS Setup ===
         this.processingLambdaUpdatesTopic = new sns.Topic(this, 'ProcessingLambdaUpdatesTopic', {
