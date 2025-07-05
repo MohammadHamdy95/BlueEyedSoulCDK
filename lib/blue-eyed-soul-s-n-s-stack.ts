@@ -20,9 +20,9 @@ export class BlueEyedSoulSNSStack extends Stack {
         });
 
         // === First SNS & SQS Setup ===
-        this.cfSystemsUpdatesTopic = new sns.Topic(this, 'CFSystemsUpdatesTopic', {
-            topicName: 'CFSystemsUpdatesTopic'
-        });
+        // this.cfSystemsUpdatesTopic = new sns.Topic(this, 'CFSystemsUpdatesTopic', {
+        //     topicName: 'CFSystemsUpdatesTopic'
+        // });
 
         // const cfSystemsUpdatesQueue = new sqs.Queue(this, 'CFSystemsUpdatesQueue', {
         //     queueName: 'CFSystemsUpdatesQueue',
@@ -38,10 +38,10 @@ export class BlueEyedSoulSNSStack extends Stack {
         //     new subs.SqsSubscription(cfSystemsUpdatesQueue)
         // );
 
-        new CfnOutput(this, 'CFSystemsTopicArn', {
-            value: this.cfSystemsUpdatesTopic.topicArn,
-            exportName: 'CFSystemsUpdatesTopicArn'
-        });
+        // new CfnOutput(this, 'CFSystemsTopicArn', {
+        //     value: this.cfSystemsUpdatesTopic.topicArn,
+        //     exportName: 'CFSystemsUpdatesTopicArn'
+        // });
 
         // new CfnOutput(this, 'CFSystemsUpdatesQueueArn', {
         //     value: cfSystemsUpdatesQueue.queueArn,
