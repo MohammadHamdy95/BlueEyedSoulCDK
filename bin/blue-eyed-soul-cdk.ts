@@ -2,7 +2,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { BlueEyedSoulPipelineStack } from '../lib/blue-eyed-soul-cdk-pipeline';
 import {BlueEyedCodeS3BucketsStack} from "../lib/blue-eyed-code-s3-stack";
-import {BlueEyedSoulSchedulerStack} from "../lib/blue-eyed-sould-scheduler-stack";
+import {BlueEyedSoulSchedulerStack} from "../lib/blue-eyed-soul-scheduler-stack";
 import {ProcessingLambdaSchedulerStack} from "../lib/processing-lambda-scheduler-stack";
 import {BlueEyedSoulDdbStack} from "../lib/blue-eyed-soul-ddb-stack";
 import {BlueEyedSoulSNSStack} from "../lib/blue-eyed-soul-s-n-s-stack";
