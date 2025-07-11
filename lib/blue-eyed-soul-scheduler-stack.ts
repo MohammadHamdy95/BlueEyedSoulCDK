@@ -37,6 +37,24 @@ export class BlueEyedSoulSchedulerStack extends cdk.Stack {
         });
 
         // EventBridge Scheduler
+        const sessionLimitEnforcerLambda = 'arn:aws:lambda:us-west-2:276366037431:function:MbSessionLimitEnforcerLambda';
+        new scheduler.CfnSchedule(this, 'MBSessionEnforcer-LambdaInvoker', {
+            name: 'MBSessionEnforcer-LambdaInvoker',
+            scheduleExpressionTimezone: 'America/Los_Angeles',
+            scheduleExpression: 'rate(1 minute)',
+            flexibleTimeWindow: {
+                mode: 'OFF',
+            },
+            target: {
+                arn: sessionLimitEnforcerLambda,
+                roleArn: schedulerRole.roleArn,
+                input: JSON.stringify({ operation: 'EnforceSessionLimit' }),
+            },
+            description: 'Triggers BlueEyedSoul-Prod every 1 minute',
+            state: 'ENABLED',
+        });
+
+        // EventBridge Scheduler
         new scheduler.CfnSchedule(this, 'DailyCheckSchedule-Prod', {
             name: 'DailyCheckSchedule-Prod',
             description: 'Runs daily at 4:20 PM Pacific Time',
