@@ -55,5 +55,12 @@ export class BlueEyedSoulDdbStack extends Stack {
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.RETAIN
         });
+
+        new dynamodb.Table(this, 'EmailPaginatorTable', {
+            tableName: 'EmailPaginatorTable',
+            partitionKey: { name: 'Account', type: dynamodb.AttributeType.STRING },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+            removalPolicy: RemovalPolicy.RETAIN
+        });
     }
 }
