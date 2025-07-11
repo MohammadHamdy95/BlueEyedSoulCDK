@@ -8,6 +8,8 @@ export class BlueEyedSoulSchedulerStack extends cdk.Stack {
         super(scope, id, props);
 
         const lambdaArn = 'arn:aws:lambda:us-west-2:276366037431:function:BlueEyedSoul-Prod';
+        const sessionLimitEnforcerLambda = 'arn:aws:lambda:us-west-2:276366037431:function:MbSessionLimitEnforcerLambda';
+
 
         // IAM role for EventBridge Scheduler
         const schedulerRole = new iam.Role(this, 'SchedulerRole', {
@@ -16,7 +18,7 @@ export class BlueEyedSoulSchedulerStack extends cdk.Stack {
 
         schedulerRole.addToPolicy(new iam.PolicyStatement({
             actions: ['lambda:InvokeFunction'],
-            resources: [lambdaArn],
+            resources: [lambdaArn , sessionLimitEnforcerLambda],
         }));
 
         // EventBridge Scheduler
@@ -37,7 +39,6 @@ export class BlueEyedSoulSchedulerStack extends cdk.Stack {
         });
 
         // EventBridge Scheduler
-        const sessionLimitEnforcerLambda = 'arn:aws:lambda:us-west-2:276366037431:function:MbSessionLimitEnforcerLambda';
         new scheduler.CfnSchedule(this, 'MBSessionEnforcer-LambdaInvoker', {
             name: 'MBSessionEnforcer-LambdaInvoker',
             scheduleExpressionTimezone: 'America/Los_Angeles',
